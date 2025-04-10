@@ -1,0 +1,11 @@
+{
+                "editor.fontSize": 22,
+                "files.associations": {
+                                "sample-common.h": "c",
+                                "imp_osd.h": "c",
+                                "rtputils.h": "c",
+                                "sgidefs.h": "c",
+                                "socket.h": "c",
+                                "stdlib.h": "c"
+                }
+}
