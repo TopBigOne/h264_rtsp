@@ -49,7 +49,7 @@ int tcp_accept(int fd)
     memset(&addr,0,sizeof(addr));
     addrlen=sizeof(addr);
 
-    /*½ÓÊÕÁ¬½Ó£¬´´½¨Ò»¸öÐÂµÄsocket,·µ»ØÆäÃèÊö·û*/
+    /*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó£ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Âµï¿½socket,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
     f = accept(fd, (struct sockaddr *)&addr, &addrlen);
 
     return f;
@@ -104,35 +104,35 @@ int tcp_listen(unsigned short port)
     struct sockaddr_in s;
     int v = 1;
 
-    /*´´½¨Ì×½Ó×Ö*/
+    /*ï¿½ï¿½ï¿½ï¿½ï¿½×½ï¿½ï¿½ï¿½*/
     if((f = socket(AF_INET, SOCK_STREAM, 0))<0)
     {
         fprintf(stderr, "socket() error in tcp_listen.\n");
         return -1;
     }
 
-    /*ÉèÖÃsocketµÄ¿ÉÑ¡²ÎÊý*/
+    /*ï¿½ï¿½ï¿½ï¿½socketï¿½Ä¿ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½*/
     setsockopt(f, SOL_SOCKET, SO_REUSEADDR, (char *) &v, sizeof(int));
 
     s.sin_family = AF_INET;
     s.sin_addr.s_addr = htonl(INADDR_ANY);
     s.sin_port = htons(port);
 
-    /*°ó¶¨socket*/
+    /*ï¿½ï¿½socket*/
     if(bind(f, (struct sockaddr *)&s, sizeof(s)))
     {
         fprintf(stderr, "bind() error in tcp_listen");
         return -1;
     }
 
-    //ÉèÖÃÎª·Ç×èÈû·½Ê½
+    //ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½
     if(ioctl(f, FIONBIO, &on) < 0)
     {
         fprintf(stderr, "ioctl() error in tcp_listen.\n");
         return -1;
     }
 
-    /*¼àÌý*/
+    /*ï¿½ï¿½ï¿½ï¿½*/
     if(listen(f, SOMAXCONN) < 0)
     {
         fprintf(stderr, "listen() error in tcp_listen.\n");
@@ -153,14 +153,14 @@ int tcp_read(int fd, void *buffer, int nbytes, struct sockaddr *Addr)
     //printf ("read count:%d\n",n);
     if(n>0)
     {
-        //»ñÈ¡¶Ô·½IPÐÅÏ¢
+        //ï¿½ï¿½È¡ï¿½Ô·ï¿½IPï¿½ï¿½Ï¢
         if(getpeername(fd, Addr, &Addrlen) < 0)
         {
             fprintf(stderr,"error getperrname:%s %i\n", __FILE__, __LINE__);
         }
         else
         {
-            //´òÓ¡³öIPºÍport
+            //ï¿½ï¿½Ó¡ï¿½ï¿½IPï¿½ï¿½port
             fprintf(stderr, "%s ", sock_ntop_host(Addr, Addrlen, addr_str, sizeof(addr_str)));
             fprintf(stderr, "Port:%d\n",ntohs(((struct sockaddr_in *)Addr)->sin_port));
         }
@@ -183,7 +183,7 @@ int tcp_write(int connectSocketId, char *dataBuf, int dataSize)
 {
     int     actDataSize;
 
-    //·¢ËÍÊý¾Ý
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     while(dataSize > 0)
     {
         actDataSize = send(connectSocketId, dataBuf, dataSize, 0);
@@ -204,18 +204,24 @@ int tcp_write(int connectSocketId, char *dataBuf, int dataSize)
     return 0;
 }
 
-/*      schedule Ïà¹Ø     */
+/*      schedule ï¿½ï¿½ï¿½     */
 stScheList sched[MAX_CONNECTION];
 
-int stop_schedule = 0;//ÊÇ·ñÍË³öschedule
-int num_conn = 2;    /*Á¬½Ó¸öÊý*/
+int stop_schedule = 0;//ï¿½Ç·ï¿½ï¿½Ë³ï¿½schedule
+int num_conn = 2;    /*ï¿½ï¿½ï¿½Ó¸ï¿½ï¿½ï¿½*/
 
+/**
+ * start sub thread/...
+ * @return
+ */
 int ScheduleInit()
 {
+    puts(__func__);
     int i;
     pthread_t thread=0;
 
-    /*³õÊ¼»¯Êý¾Ý*/
+    /*ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
+    // æœ€å¤šè¿ž10ä¸ªï¼Ÿ
     for(i=0; i<MAX_CONNECTION; ++i)
     {
         sched[i].rtp_session=NULL;
@@ -224,7 +230,7 @@ int ScheduleInit()
         sched[i].BeginFrame=0;
     }
 
-    /*´´½¨´¦ÀíÖ÷Ïß³Ì*/
+    /*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß³ï¿½*/
     pthread_create(&thread,NULL,schedule_do,NULL);
 
     return 0;
@@ -257,7 +263,7 @@ void *schedule_do(void *arg)
 
         s32FindNal = 0;
 
-        //Èç¹ûÓÐ¿Í»§¶ËÁ¬½Ó£¬Ôòg_s32DoPlay´óÓÚÁã
+        //ï¿½ï¿½ï¿½ï¿½Ð¿Í»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó£ï¿½ï¿½ï¿½g_s32DoPlayï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
       //  if(g_s32DoPlay>0)
         {
             ringbuflen = ringget(&ringinfo);
@@ -271,9 +277,9 @@ void *schedule_do(void *arg)
             {
                 if(!sched[i].rtp_session->pause)
                 {
-                    //¼ÆËãÊ±¼ä´Á
+                    //ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½
                     gettimeofday(&now,NULL);
-                    mnow = (now.tv_sec*1000 + now.tv_usec/1000);//ºÁÃë
+                    mnow = (now.tv_sec*1000 + now.tv_usec/1000);//ï¿½ï¿½ï¿½ï¿½
                     if((sched[i].rtp_session->hndRtp)&&(s32FindNal))
                     {
                         //printf("send i frame,length:%d,pointer:%x,timestamp:%lld\n",ringinfo.size,(int)(ringinfo.buffer),mnow);
@@ -303,19 +309,19 @@ cleanup:
     return ERR_NOERROR;
 }
 
-//°ÑRTP»á»°Ìí¼Ó½øscheduleÖÐ£¬´íÎó·µ»Ø-1,Õý³£·µ»Øschedule¶ÓÁÐºÅ
+//ï¿½ï¿½RTPï¿½á»°ï¿½ï¿½Ó½ï¿½scheduleï¿½Ð£ï¿½ï¿½ï¿½ï¿½ó·µ»ï¿½-1,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½scheduleï¿½ï¿½ï¿½Ðºï¿½
 int schedule_add(RTP_session *rtp_session)
 {
     int i;
     for(i=0; i<MAX_CONNECTION; ++i)
     {
-        /*ÐèÊÇ»¹Ã»ÓÐ±»¼ÓÈëµ½µ÷¶È¶ÓÁÐÖÐµÄ»á»°*/
+        /*ï¿½ï¿½ï¿½Ç»ï¿½Ã»ï¿½Ð±ï¿½ï¿½ï¿½ï¿½ëµ½ï¿½ï¿½ï¿½È¶ï¿½ï¿½ï¿½ï¿½ÐµÄ»á»°*/
         if(!sched[i].valid)
         {
             sched[i].valid=1;
             sched[i].rtp_session=rtp_session;
 
-            //ÉèÖÃ²¥·Å¶¯×÷
+            //ï¿½ï¿½ï¿½Ã²ï¿½ï¿½Å¶ï¿½ï¿½ï¿½
             sched[i].play_action=RtpSend;
             printf("**adding a schedule object action %s,%d**\n", __FILE__, __LINE__);
 
@@ -335,7 +341,7 @@ int schedule_start(int id,stPlayArgs *args)
     sched[id].rtp_session->pause=0;
     sched[id].rtp_session->started=1;
 
-    //²¥·Å×´Ì¬,´óÓÚÁãÔò±íÊ¾ÓÐ¿Í»§¶Ë²¥·ÅÎÄ¼þ
+    //ï¿½ï¿½ï¿½ï¿½×´Ì¬,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½Ð¿Í»ï¿½ï¿½Ë²ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½
     g_s32DoPlay++;
 
     return ERR_NOERROR;
@@ -355,16 +361,16 @@ int schedule_remove(int id)
 }
 
 
-//°ÑÐèÒª·¢ËÍµÄÐÅÏ¢·ÅÈërtsp.out_bufferÖÐ
+//ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½Íµï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½rtsp.out_bufferï¿½ï¿½
 int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)
 {
-    /*¼ì²éÊÇ·ñÓÐ»º³åÒç³ö*/
+    /*ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½Ð»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
     if((rtsp->out_size + len) > (int) sizeof(rtsp->out_buffer))
     {
         fprintf(stderr,"bwrite(): not enough free space in out message buffer.\n");
         return ERR_ALLOC;
     }
-    /*Ìî³äÊý¾Ý*/
+    /*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
     memcpy(&(rtsp->out_buffer[rtsp->out_size]), buffer, len);
     rtsp->out_buffer[rtsp->out_size + len] = '\0';
     rtsp->out_size += len;
@@ -390,7 +396,7 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
         len = 256;
     }
 
-    /*·ÖÅä¿Õ¼ä*/
+    /*ï¿½ï¿½ï¿½ï¿½Õ¼ï¿½*/
     b = (char *) malloc(len);
     if(b == NULL)
     {
@@ -398,20 +404,20 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
         return ERR_ALLOC;
     }
     memset(b, 0, sizeof(b));
-    /*°´ÕÕÐ­Òé¸ñÊ½Ìî³äÊý¾Ý*/
+    /*ï¿½ï¿½ï¿½ï¿½Ð­ï¿½ï¿½ï¿½Ê½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
     sprintf(b, "%s %d %s"RTSP_EL"CSeq: %d"RTSP_EL, RTSP_VER, err, get_stat(err), rtsp->rtsp_cseq);
     strcat(b, RTSP_EL);
 
-    /*½«Êý¾ÝÐ´Èëµ½»º³åÇøÖÐ*/
+    /*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ëµ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
     res = bwrite(b, (unsigned short) strlen(b), rtsp);
-    //ÊÍ·Å¿Õ¼ä
+    //ï¿½Í·Å¿Õ¼ï¿½
     free(b);
 
     return res;
 }
 
 
-//ÓÉ´íÎóÂë·µ»Ø´íÎóÐÅÏ¢
+//ï¿½É´ï¿½ï¿½ï¿½ï¿½ë·µï¿½Ø´ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
 const char *get_stat(int err)
 {
     struct

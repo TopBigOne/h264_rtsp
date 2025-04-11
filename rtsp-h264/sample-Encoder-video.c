@@ -201,6 +201,7 @@ void showbox(int index,int x0,int y0,int x1,int y1)
 void *SAMPLE_VENC_1080P_CLASSIC(void *p)
 //int main(int argc, char *argv[])
 {
+    puts("start sub thread task......");
 	int i, ret;
 
     //if (argc >= 2) {

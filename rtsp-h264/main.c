@@ -21,6 +21,7 @@
 #include "rtputils.h"
 #include "ringfifo.h"
 
+// 在别的代码里有实现
 extern void *SAMPLE_VENC_1080P_CLASSIC(void *p);
 extern void SAMPLE_VENC_HandleSig(int signo);
 struct ringbuf ringinfo;
@@ -41,6 +42,11 @@ static void *yoloy5(void *args)
 	return NULL;
 }
 
+/**
+ * @param argc
+ * @param argv
+ * @return
+ */
 int main(int argc, char *argv[])
 {
 	int s32MainFd,temp;
@@ -51,6 +57,7 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, SAMPLE_VENC_HandleSig); 
 	ringmalloc(300*1024);
 	pthread_create(&id,NULL,SAMPLE_VENC_1080P_CLASSIC,NULL);
+    printf("--------------------------------小田广亚郎----------------------------------------------------start\n");
 	printf("RTSP server START\n");
 	PrefsInit();
 	printf("listen for client connecting...\n");
@@ -65,6 +72,7 @@ int main(int argc, char *argv[])
 	printf("start yoloy5\n");
 	yoloy5_init();
 	pthread_create(&id2,NULL,yoloy5,NULL);
+    printf("s32MainFd is : %d\n",s32MainFd);
 	while (1)
 	{
 		nanosleep(&ts, NULL);
@@ -75,4 +83,6 @@ int main(int argc, char *argv[])
 	printf("The Server quit!\n");
 	return 0;
 }
+
+
 
