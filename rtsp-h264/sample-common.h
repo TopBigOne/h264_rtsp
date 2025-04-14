@@ -93,11 +93,18 @@ extern "C"
 
 /*#define SUPPORT_RGB555LE*/
 
+//typedef struct {
+//    IMPDeviceID	deviceID;		/**< 设备ID */
+//    int			groupID;		/**< 组ID */
+//    int			outputID;		/**< 输出ID */
+//} IMPCell;
+
 struct chn_conf{
-	unsigned int index;//0 for main channel ,1 for second channel
+	unsigned int index;//0 for main channel ,1 for second channel   // 通道号
 	unsigned int enable;
+    // 编码协议 protocol+编码框架 profile
 	IMPEncoderProfile payloadType;
-	IMPFSChnAttr fs_chn_attr;
+	IMPFSChnAttr fs_chn_attr; //通道属性结构体
 	IMPCell framesource_chn;
 	IMPCell imp_encoder;
 };
@@ -108,7 +115,9 @@ typedef struct {
 }streamInfo;
 
 typedef struct {
+    // 图像编码协议类型
 	IMPEncoderEncType type;
+    // 编码器编码模式属性
 	IMPEncoderRcMode mode;
 	uint16_t frameRate;
 	uint16_t gopLength;
