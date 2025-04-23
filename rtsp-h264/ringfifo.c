@@ -9,67 +9,67 @@
 
 #define NMAX 32
 
-int iput = 0; /* »·ĞÎ»º³åÇøµÄµ±Ç°·ÅÈëÎ»ÖÃ */
-int iget = 0; /* »º³åÇøµÄµ±Ç°È¡³öÎ»ÖÃ */
-int n = 0; /* »·ĞÎ»º³åÇøÖĞµÄÔªËØ×ÜÊıÁ¿ */
+int iput = 0; /* ç¯å½¢ç¼“å†²åŒºçš„å½“å‰æ”¾å…¥ä½ç½® */
+int iget = 0; /* ç¼“å†²åŒºçš„å½“å‰å–å‡ºä½ç½® */
+int n = 0; /* ç¯å½¢ç¼“å†²åŒºä¸­çš„å…ƒç´ æ€»æ•°é‡ */
 
 struct ringbuf ringfifo[NMAX];
-extern int UpdateSpsOrPps(unsigned char *data,int frame_type,int len);
-void UpdateSps(unsigned char *data,int len);
-void UpdatePps(unsigned char *data,int len);
 
-/* »·ĞÎ»º³åÇøµÄµØÖ·±àºÅ¼ÆËãº¯Êı£¬Èç¹ûµ½´ï»½ĞÑ»º³åÇøµÄÎ²²¿£¬½«ÈÆ»Øµ½Í·²¿¡£
-»·ĞÎ»º³åÇøµÄÓĞĞ§µØÖ·±àºÅÎª£º0µ½(NMAX-1)
+extern int UpdateSpsOrPps(unsigned char *data, int frame_type, int len);
+
+void UpdateSps(unsigned char *data, int len);
+
+void UpdatePps(unsigned char *data, int len);
+
+/* ç¯å½¢ç¼“å†²åŒºçš„åœ°å€ç¼–å·è®¡ç®—å‡½æ•°ï¼Œå¦‚æœåˆ°è¾¾å”¤é†’ç¼“å†²åŒºçš„å°¾éƒ¨ï¼Œå°†ç»•å›åˆ°å¤´éƒ¨ã€‚
+ç¯å½¢ç¼“å†²åŒºçš„æœ‰æ•ˆåœ°å€ç¼–å·ä¸ºï¼š0åˆ°(NMAX-1)
 */
-void ringmalloc(int size)
-{
+void ringmalloc(int size) {
     int i;
-    for(i =0; i<NMAX; i++)
-    {
+    for (i = 0; i < NMAX; i++) {
         ringfifo[i].buffer = malloc(size);
         ringfifo[i].size = 0;
         ringfifo[i].frame_type = 0;
-       // printf("FIFO INFO:idx:%d,len:%d,ptr:%x\n",i,ringfifo[i].size,(int)(ringfifo[i].buffer));
+        // printf("FIFO INFO:idx:%d,len:%d,ptr:%x\n",i,ringfifo[i].size,(int)(ringfifo[i].buffer));
     }
-    iput = 0; /* »·ĞÎ»º³åÇøµÄµ±Ç°·ÅÈëÎ»ÖÃ */
-    iget = 0; /* »º³åÇøµÄµ±Ç°È¡³öÎ»ÖÃ */
-    n = 0; /* »·ĞÎ»º³åÇøÖĞµÄÔªËØ×ÜÊıÁ¿ */
+    iput = 0; /* ç¯å½¢ç¼“å†²åŒºçš„å½“å‰æ”¾å…¥ä½ç½® */
+    iget = 0; /* ç¼“å†²åŒºçš„å½“å‰å–å‡ºä½ç½® */
+    n = 0; /* ç¯å½¢ç¼“å†²åŒºä¸­çš„å…ƒç´ æ€»æ•°é‡ */
 }
+
 /**************************************************************************************************
 **
 **
 **
 **************************************************************************************************/
-void ringreset()
-{
-    iput = 0; /* »·ĞÎ»º³åÇøµÄµ±Ç°·ÅÈëÎ»ÖÃ */
-    iget = 0; /* »º³åÇøµÄµ±Ç°È¡³öÎ»ÖÃ */
-    n = 0; /* »·ĞÎ»º³åÇøÖĞµÄÔªËØ×ÜÊıÁ¿ */
+void ringreset() {
+    iput = 0; /* ç¯å½¢ç¼“å†²åŒºçš„å½“å‰æ”¾å…¥ä½ç½® */
+    iget = 0; /* ç¼“å†²åŒºçš„å½“å‰å–å‡ºä½ç½® */
+    n = 0; /* ç¯å½¢ç¼“å†²åŒºä¸­çš„å…ƒç´ æ€»æ•°é‡ */
 }
+
 /**************************************************************************************************
 **
 **
 **
 **************************************************************************************************/
-void ringfree(void)
-{
+void ringfree(void) {
     int i;
     printf("begin free mem\n");
-    for(i =0; i<NMAX; i++)
-    {
-       // printf("FREE FIFO INFO:idx:%d,len:%d,ptr:%x\n",i,ringfifo[i].size,(int)(ringfifo[i].buffer));
+    for (i = 0; i < NMAX; i++) {
+        // printf("FREE FIFO INFO:idx:%d,len:%d,ptr:%x\n",i,ringfifo[i].size,(int)(ringfifo[i].buffer));
         free(ringfifo[i].buffer);
         ringfifo[i].size = 0;
     }
 }
+
 /**************************************************************************************************
 **
 **
 **
 **************************************************************************************************/
-int addring(int i)
-{
-    return (i+1) == NMAX ? 0 : i+1;
+int addring(int i) {
+    return (i + 1) == NMAX ? 0 : i + 1;
 }
 
 /**************************************************************************************************
@@ -77,13 +77,12 @@ int addring(int i)
 **
 **
 **************************************************************************************************/
-/* ´Ó»·ĞÎ»º³åÇøÖĞÈ¡Ò»¸öÔªËØ */
 
-int ringget(struct ringbuf *getinfo)
-{
+/* ä»ç¯å½¢ç¼“å†²åŒºä¸­å–ä¸€ä¸ªå…ƒç´  */
+
+int ringget(struct ringbuf *getinfo) {
     int Pos;
-    if(n>0)
-    {
+    if (n > 0) {
         Pos = iget;
         iget = addring(iget);
         n--;
@@ -92,33 +91,27 @@ int ringget(struct ringbuf *getinfo)
         getinfo->size = ringfifo[Pos].size;
         //printf("Get FIFO INFO:idx:%d,len:%d,ptr:%x,type:%d\n",Pos,getinfo->size,(int)(getinfo->buffer),getinfo->frame_type);
         return ringfifo[Pos].size;
-    }
-    else
-    {
+    } else {
         //printf("Buffer is empty\n");
         return 0;
     }
 }
+
 /**************************************************************************************************
 **
 **
 **
 **************************************************************************************************/
-/* Ïò»·ĞÎ»º³åÇøÖĞ·ÅÈëÒ»¸öÔªËØ*/
-void ringput(unsigned char *buffer,int size,int encode_type)
-{
-
-    if(n<NMAX)
-    {
-        memcpy(ringfifo[iput].buffer,buffer,size);
-        ringfifo[iput].size= size;
+/* å‘ç¯å½¢ç¼“å†²åŒºä¸­æ”¾å…¥ä¸€ä¸ªå…ƒç´ */
+void ringput(unsigned char *buffer, int size, int encode_type) {
+    if (n < NMAX) {
+        memcpy(ringfifo[iput].buffer, buffer, size);
+        ringfifo[iput].size = size;
         ringfifo[iput].frame_type = encode_type;
         //printf("Put FIFO INFO:idx:%d,len:%d,ptr:%x,type:%d\n",iput,ringfifo[iput].size,(int)(ringfifo[iput].buffer),ringfifo[iput].frame_type);
         iput = addring(iput);
         n++;
-    }
-    else
-    {
+    } else {
         //  printf("Buffer is full\n");
     }
 }
@@ -129,46 +122,40 @@ void ringput(unsigned char *buffer,int size,int encode_type)
 **
 **************************************************************************************************/
 #include <imp/imp_encoder.h>
-int HisiPutH264DataToBuffer(IMPEncoderStream *stream)
-{
-	int i,j,x;
-	int len=0,off=0,len2=2,uplen=0;
-	unsigned char *pstr;
-	int iframe=0;
-	for (i = 0; i < stream->packCount; i++)
-	{
-		len+=stream->pack[i].length;
-	}
-	if(len>=300*1024)
-	{
-		printf("drop data %d\n",len);
-		return 1;
-	}
 
-    if(n<NMAX)
-    {
-		for (i = 0; i < stream->packCount; i++)
-		{
-			memcpy(ringfifo[iput].buffer+off,stream->virAddr+stream->pack[i].offset,stream->pack[i].length);
-			off+=stream->pack[i].length;
-			pstr=stream->virAddr+stream->pack[i].offset;
+int HisiPutH264DataToBuffer(IMPEncoderStream *stream) {
+    int i, j, x;
+    int len = 0, off = 0, len2 = 2, uplen = 0;
+    unsigned char *pstr;
+    int iframe = 0;
+    for (i = 0; i < stream->packCount; i++) {
+        len += stream->pack[i].length;
+    }
+    if (len >= 300 * 1024) {
+        printf("drop data %d\n", len);
+        return 1;
+    }
 
-			if(pstr[4]==0x67)
-			{
-				UpdateSps(ringfifo[iput].buffer+off,9);
-				iframe=1;
-			}
-			if(pstr[4]==0x68)
-			{
-				UpdatePps(ringfifo[iput].buffer+off,4);
-			}
+    if (n < NMAX) {
+        for (i = 0; i < stream->packCount; i++) {
+            memcpy(ringfifo[iput].buffer + off, stream->virAddr + stream->pack[i].offset, stream->pack[i].length);
 
-		}
+            off += stream->pack[i].length;
+            pstr = stream->virAddr + stream->pack[i].offset;
 
-        ringfifo[iput].size= len;
+            if (pstr[4] == 0x67) {
+                UpdateSps(ringfifo[iput].buffer + off, 9);
+                iframe = 1;
+            }
+            if (pstr[4] == 0x68) {
+                UpdatePps(ringfifo[iput].buffer + off, 4);
+            }
+        }
+
+        ringfifo[iput].size = len;
         iput = addring(iput);
-       n++;
-   }
+        n++;
+    }
 
-	return 1;
+    return 1;
 }

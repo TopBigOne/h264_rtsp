@@ -317,3 +317,8 @@ int64_t sample_gettimeus(void);
 #endif /* __IMP_COMMON_H__ */
 
 ```
+
+
+
+# 参考
+* https://github.com/rinetd/hi3516dv300-rtsp-h264

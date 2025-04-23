@@ -14,7 +14,7 @@ extern "C" {
 #define MAX_RTP_PKT_LENGTH     1400
 
 #define H264                    96
-#define G711					97
+#define G711					97 // 音频编码标准:g711a： 中国 ,g711u : 美国
 
 typedef enum
 {

@@ -24,7 +24,7 @@
 #define ERR_FATAL                   -9
 #define ERR_CONNECTION_CLOSE        -10
 
-/* ÏûÏ¢Í·¹Ø¼ü×Ö */
+/* æ¶ˆæ¯å¤´å…³é”®å­— */
 #define HDR_CONTENTLENGTH "Content-Length"
 #define HDR_ACCEPT "Accept"
 #define HDR_ALLOW "Allow"
@@ -42,7 +42,7 @@
 #define HDR_USER_AGENT "User-Agent"
 
 
-/*rtsp·½·¨*/
+/*rtspæ–¹æ³•*/
 #define RTSP_METHOD_MAXLEN 15
 #define RTSP_METHOD_DESCRIBE "DESCRIBE"
 #define RTSP_METHOD_ANNOUNCE "ANNOUNCE"
@@ -57,7 +57,7 @@
 #define RTSP_METHOD_TEARDOWN "TEARDOWN"
 
 
-/*rtsp·½·¨¼ÇºÅID*/
+/*rtspæ–¹æ³•è®°å·ID*/
 #define RTSP_ID_DESCRIBE 0
 #define RTSP_ID_ANNOUNCE 1
 #define RTSP_ID_GET_PARAMETERS 2
@@ -70,7 +70,7 @@
 #define RTSP_ID_SET_PARAMETER 9
 #define RTSP_ID_TEARDOWN 10
 
-/*		RTSP Ïà¹Ø		*/
+/*		RTSP ç›¸å…³		*/
 #define RTSP_not_full 0
 #define RTSP_method_rcvd 1
 #define RTSP_interlvd_rcvd 2
@@ -95,8 +95,10 @@
 
 typedef struct
 {
-        int RTP;
-        int RTCP;
+	int RTP;  // Real-time Transport Protocol,ç”¨äºä¼ è¾“å®æ—¶éŸ³è§†é¢‘æ•°æ®,é€šå¸¸ä½¿ç”¨ å¶æ•°ç«¯å£ï¼ˆå¦‚ 5004ï¼‰ã€‚
+	int RTCP; // ï¼ˆRTP Control Protocolï¼‰ç”¨äºä¼ è¾“æ§åˆ¶ä¿¡æ¯ï¼ˆå¦‚ä¸¢åŒ…ç‡ã€å»¶è¿Ÿç»Ÿè®¡ç­‰ï¼‰ã€‚	é€šå¸¸ä½¿ç”¨ RTP ç«¯å£ + 1ï¼ˆå¦‚ 5005ï¼‰ã€‚
+
+
 } port_pair;
 
 typedef enum{
@@ -137,32 +139,32 @@ typedef struct _RTP_session {
 }RTP_session;
 
 typedef struct _RTSP_session {
-    int cur_state;   /*»á»°×´Ì¬*/
-    int session_id; /*»á»°µÄID*/
+	int cur_state;   /*ä¼šè¯çŠ¶æ€*/
+	int session_id; /*ä¼šè¯çš„ID*/
 
-    RTP_session *rtp_session; /*RTP»á»°*/
+	RTP_session *rtp_session; /*RTPä¼šè¯*/
 
-    struct _RTSP_session *next; /*ÏÂÒ»¸ö»á»°µÄÖ¸Õë£¬¹¹³ÉÁ´±í½á¹¹*/
+	struct _RTSP_session *next; /*ä¸‹ä¸€ä¸ªä¼šè¯çš„æŒ‡é’ˆï¼Œæ„æˆé“¾è¡¨ç»“æ„*/
 } RTSP_session;
 
 typedef struct _RTSP_buffer {
-    int fd;    /*socketÎÄ¼şÃèÊö·û*/
-    unsigned int port;/*¶Ë¿ÚºÅ*/
+	int fd;    /*socketæ–‡ä»¶æè¿°ç¬¦*/
+	unsigned int port;/*ç«¯å£å·*/
 
-    struct sockaddr stClientAddr;
+	struct sockaddr stClientAddr;
 
-    char in_buffer[RTSP_BUFFERSIZE];/*½ÓÊÕ»º³åÇø*/
-    unsigned int in_size;/*½ÓÊÕ»º³åÇøµÄ´óĞ¡*/
-    char out_buffer[RTSP_BUFFERSIZE+MAX_DESCR_LENGTH];/*·¢ËÍ»º³åÇø*/
-    int out_size;/*·¢ËÍ»º³åÇø´óĞ¡*/
+	char in_buffer[RTSP_BUFFERSIZE];/*æ¥æ”¶ç¼“å†²åŒº*/
+	unsigned int in_size;/*æ¥æ”¶ç¼“å†²åŒºçš„å¤§å°*/
+	char out_buffer[RTSP_BUFFERSIZE+MAX_DESCR_LENGTH];/*å‘é€ç¼“å†²åŒº*/
+	int out_size;/*å‘é€ç¼“å†²åŒºå¤§å°*/
 
-    unsigned int rtsp_cseq;/*ĞòÁĞºÅ*/
-    char descr[MAX_DESCR_LENGTH];/*ÃèÊö*/
-    RTSP_session *session_list;/*»á»°Á´±í*/
-    struct _RTSP_buffer *next; /*Ö¸ÏòÏÂÒ»¸ö½á¹¹Ìå£¬¹¹³ÉÁËÁ´±í½á¹¹*/
+	unsigned int rtsp_cseq;/*åºåˆ—å·*/
+	char descr[MAX_DESCR_LENGTH];/*æè¿°*/
+	RTSP_session *session_list;/*ä¼šè¯é“¾è¡¨*/
+	struct _RTSP_buffer *next; /*æŒ‡å‘ä¸‹ä¸€ä¸ªç»“æ„ä½“ï¼Œæ„æˆäº†é“¾è¡¨ç»“æ„*/
 } RTSP_buffer;
 
-/*			tcpÏà¹Ø				*/
+/*			tcpç›¸å…³				*/
 char *sock_ntop_host(const struct sockaddr *sa, socklen_t salen, char *str, size_t len);
 int tcp_accept(int fd);
 int tcp_connect(unsigned short port, char *addr);
@@ -171,29 +173,29 @@ int tcp_read(int fd, void *buffer, int nbytes, struct sockaddr *Addr);
 int tcp_send(int fd, void *dataBuf, unsigned int dataSize);
 int tcp_write(int fd, char *buffer, int nbytes);
 
-/*			scheduleÏà¹Ø				*/
+/*			scheduleç›¸å…³				*/
 #define MAX_PROCESS	1/*number of fork*/
 #define MAX_CONNECTION	10/*rtsp connection*/
 //#define ONE_FORK_MAX_CONNECTION ((int)(MAX_CONNECTION/MAX_PROCESS))/*rtsp connection for one fork*/
 
 typedef struct _play_args
 {
-    struct tm playback_time;                    /*»Ø·ÅÊ±¼ä*/
-    short playback_time_valid;                 /*»Ø·ÅÊ±¼äÊÇ·ñºÏ·¨*/
-    float start_time;                                   /*¿ªÊ¼Ê±¼ä*/
-    short start_time_valid;                        /*¿ªÊ¼Ê±¼äÊÇ·ñºÏ·¨*/
-    float end_time;                                     /*½áÊøÊ±¼ä*/
+	struct tm playback_time;                   /*å›æ”¾æ—¶é—´*/
+	short playback_time_valid;                 /*å›æ”¾æ—¶é—´æ˜¯å¦åˆæ³•*/
+	float start_time;                          /*å¼€å§‹æ—¶é—´*/
+	short start_time_valid;                    /*å¼€å§‹æ—¶é—´æ˜¯å¦åˆæ³•*/
+	float end_time;                            /*ç»“æŸæ—¶é—´*/
 } stPlayArgs;
 
 typedef unsigned int (*RTP_play_action)(unsigned int u32Rtp, char *pData, int s32DataSize, unsigned int u32TimeStamp);
-
 typedef struct _schedule_list
 {
-    int valid;/*ºÏ·¨ĞÔ±êÊ¶*/
+	int valid;/*åˆæ³•æ€§æ ‡è¯†*/
 	int BeginFrame;
-    RTP_session *rtp_session;/*RTP»á»°*/
-    RTP_play_action play_action;/*²¥·Å¶¯×÷*/
+	RTP_session *rtp_session;/*RTPä¼šè¯*/
+	RTP_play_action play_action;/*æ’­æ”¾åŠ¨ä½œ*/
 } stScheList;
+
 
 int ScheduleInit();
 void *schedule_do(void *nothing);

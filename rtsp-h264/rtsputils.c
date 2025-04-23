@@ -19,14 +19,25 @@ extern int g_s32DoPlay;
 
 //=====================================
 
+/**
+ * socket 地址结构体（struct sockaddr）转换为其 字符串形式的 IP 地址（如 "192.168.1.1"），
+ * 支持 IPv4 地址，并处理未知地址类型的情况
+ * @param sa
+ * @param salen
+ * @param str
+ * @param len
+ * @return
+ */
 char *sock_ntop_host(const struct sockaddr *sa, socklen_t salen, char *str, size_t len)
 {
     switch(sa->sa_family)
     {
         case AF_INET:
         {
+            // 将 sa 强制转换为 IPv4 专用结构体 sockaddr_in。
             struct sockaddr_in  *sin = (struct sockaddr_in *) sa;
 
+            // 将二进制 IP 地址（sin->sin_addr）转换为点分十进制字符串（如 "192.168.1.1"）。
             if(inet_ntop(AF_INET, &sin->sin_addr, str, len) == NULL)
                 return(NULL);
             return(str);
@@ -49,7 +60,7 @@ int tcp_accept(int fd)
     memset(&addr,0,sizeof(addr));
     addrlen=sizeof(addr);
 
-    /*�������ӣ�����һ���µ�socket,������������*/
+    /*接收连接，创建一个新的socket,返回其描述符*/
     f = accept(fd, (struct sockaddr *)&addr, &addrlen);
 
     return f;
@@ -104,35 +115,35 @@ int tcp_listen(unsigned short port)
     struct sockaddr_in s;
     int v = 1;
 
-    /*�����׽���*/
+    /*创建套接字*/
     if((f = socket(AF_INET, SOCK_STREAM, 0))<0)
     {
         fprintf(stderr, "socket() error in tcp_listen.\n");
         return -1;
     }
 
-    /*����socket�Ŀ�ѡ����*/
+    /*设置socket的可选参数*/
     setsockopt(f, SOL_SOCKET, SO_REUSEADDR, (char *) &v, sizeof(int));
 
     s.sin_family = AF_INET;
     s.sin_addr.s_addr = htonl(INADDR_ANY);
     s.sin_port = htons(port);
 
-    /*��socket*/
+    /*绑定socket*/
     if(bind(f, (struct sockaddr *)&s, sizeof(s)))
     {
         fprintf(stderr, "bind() error in tcp_listen");
         return -1;
     }
 
-    //����Ϊ��������ʽ
+    //设置为非阻塞方式
     if(ioctl(f, FIONBIO, &on) < 0)
     {
         fprintf(stderr, "ioctl() error in tcp_listen.\n");
         return -1;
     }
 
-    /*����*/
+    /*监听*/
     if(listen(f, SOMAXCONN) < 0)
     {
         fprintf(stderr, "listen() error in tcp_listen.\n");
@@ -153,14 +164,14 @@ int tcp_read(int fd, void *buffer, int nbytes, struct sockaddr *Addr)
     //printf ("read count:%d\n",n);
     if(n>0)
     {
-        //��ȡ�Է�IP��Ϣ
+        //获取对方IP信息
         if(getpeername(fd, Addr, &Addrlen) < 0)
         {
             fprintf(stderr,"error getperrname:%s %i\n", __FILE__, __LINE__);
         }
         else
         {
-            //��ӡ��IP��port
+            //打印出IP和port
             fprintf(stderr, "%s ", sock_ntop_host(Addr, Addrlen, addr_str, sizeof(addr_str)));
             fprintf(stderr, "Port:%d\n",ntohs(((struct sockaddr_in *)Addr)->sin_port));
         }
@@ -183,7 +194,7 @@ int tcp_write(int connectSocketId, char *dataBuf, int dataSize)
 {
     int     actDataSize;
 
-    //��������
+    //发送数据
     while(dataSize > 0)
     {
         actDataSize = send(connectSocketId, dataBuf, dataSize, 0);
@@ -204,11 +215,11 @@ int tcp_write(int connectSocketId, char *dataBuf, int dataSize)
     return 0;
 }
 
-/*      schedule ���     */
+/*      schedule 相关     */
 stScheList sched[MAX_CONNECTION];
 
-int stop_schedule = 0;//�Ƿ��˳�schedule
-int num_conn = 2;    /*���Ӹ���*/
+int stop_schedule = 0;//是否退出schedule
+int num_conn = 2;    /*连接个数*/
 
 /**
  * start sub thread/...
@@ -220,7 +231,7 @@ int ScheduleInit()
     int i;
     pthread_t thread=0;
 
-    /*��ʼ������*/
+    /*初始化数据*/
     // 最多连10个？
     for(i=0; i<MAX_CONNECTION; ++i)
     {
@@ -230,7 +241,7 @@ int ScheduleInit()
         sched[i].BeginFrame=0;
     }
 
-    /*�����������߳�*/
+    /*创建处理主线程*/
     pthread_create(&thread,NULL,schedule_do,NULL);
 
     return 0;
@@ -259,11 +270,11 @@ void *schedule_do(void *arg)
     do
     {
         nanosleep(&ts, NULL);
-//      trace_point();
+     //  trace_point();
 
         s32FindNal = 0;
 
-        //����пͻ������ӣ���g_s32DoPlay������
+        //如果有客户端连接，则g_s32DoPlay大于零
       //  if(g_s32DoPlay>0)
         {
             ringbuflen = ringget(&ringinfo);
@@ -273,13 +284,15 @@ void *schedule_do(void *arg)
         s32FindNal = 1;
         for(i=0; i<MAX_CONNECTION; ++i)
         {
+            // 可用
             if(sched[i].valid)
             {
+                // 没有暂停
                 if(!sched[i].rtp_session->pause)
                 {
-                    //����ʱ���
+                    //计算时间戳
                     gettimeofday(&now,NULL);
-                    mnow = (now.tv_sec*1000 + now.tv_usec/1000);//����
+                    mnow = (now.tv_sec*1000 + now.tv_usec/1000);//毫秒
                     if((sched[i].rtp_session->hndRtp)&&(s32FindNal))
                     {
                         //printf("send i frame,length:%d,pointer:%x,timestamp:%lld\n",ringinfo.size,(int)(ringinfo.buffer),mnow);
@@ -309,20 +322,20 @@ cleanup:
     return ERR_NOERROR;
 }
 
-//��RTP�Ự��ӽ�schedule�У����󷵻�-1,��������schedule���к�
+//把RTP会话添加进schedule中，错误返回-1,正常返回schedule队列号
 int schedule_add(RTP_session *rtp_session)
 {
     int i;
     for(i=0; i<MAX_CONNECTION; ++i)
     {
-        /*���ǻ�û�б����뵽���ȶ����еĻỰ*/
+        /*需是还没有被加入到调度队列中的会话*/
         if(!sched[i].valid)
         {
             sched[i].valid=1;
             sched[i].rtp_session=rtp_session;
 
-            //���ò��Ŷ���
-            sched[i].play_action=RtpSend;
+            //设置播放动作
+            sched[i].play_action=RtpSend; //   这是一个指针函数回调
             printf("**adding a schedule object action %s,%d**\n", __FILE__, __LINE__);
 
             return i;
@@ -341,7 +354,7 @@ int schedule_start(int id,stPlayArgs *args)
     sched[id].rtp_session->pause=0;
     sched[id].rtp_session->started=1;
 
-    //����״̬,���������ʾ�пͻ��˲����ļ�
+    //播放状态,大于零则表示有客户端播放文件
     g_s32DoPlay++;
 
     return ERR_NOERROR;
@@ -361,16 +374,22 @@ int schedule_remove(int id)
 }
 
 
-//����Ҫ���͵���Ϣ����rtsp.out_buffer��
+/**
+ * 把需要发送的信息放入rtsp.out_buffer中
+ * @param buffer
+ * @param len
+ * @param rtsp
+ * @return
+ */
 int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)
 {
-    /*����Ƿ��л������*/
+    /*检查是否有缓冲溢出*/
     if((rtsp->out_size + len) > (int) sizeof(rtsp->out_buffer))
     {
         fprintf(stderr,"bwrite(): not enough free space in out message buffer.\n");
         return ERR_ALLOC;
     }
-    /*�������*/
+    /*填充数据*/
     memcpy(&(rtsp->out_buffer[rtsp->out_size]), buffer, len);
     rtsp->out_buffer[rtsp->out_size + len] = '\0';
     rtsp->out_size += len;
@@ -396,7 +415,7 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
         len = 256;
     }
 
-    /*����ռ�*/
+    /*分配空间*/
     b = (char *) malloc(len);
     if(b == NULL)
     {
@@ -404,20 +423,20 @@ int send_reply(int err, char *addon, RTSP_buffer * rtsp)
         return ERR_ALLOC;
     }
     memset(b, 0, sizeof(b));
-    /*����Э���ʽ�������*/
+    /*按照协议格式填充数据*/
     sprintf(b, "%s %d %s"RTSP_EL"CSeq: %d"RTSP_EL, RTSP_VER, err, get_stat(err), rtsp->rtsp_cseq);
     strcat(b, RTSP_EL);
 
-    /*������д�뵽��������*/
+    /*将数据写入到缓冲区中*/
     res = bwrite(b, (unsigned short) strlen(b), rtsp);
-    //�ͷſռ�
+    //释放空间
     free(b);
 
     return res;
 }
 
 
-//�ɴ����뷵�ش�����Ϣ
+//由错误码返回错误信息
 const char *get_stat(int err)
 {
     struct
