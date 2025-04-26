@@ -7,5 +7,5 @@ int addring (int i);
 int ringget(struct ringbuf *getinfo);
 void ringput(unsigned char *buffer,int size,int encode_type);
 void ringfree();
-void ringmalloc(int size);
+void ringmalloc();
 void ringreset();

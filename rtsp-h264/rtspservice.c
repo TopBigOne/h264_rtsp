@@ -121,7 +121,7 @@ void AddClient(RTSP_buffer **ppRtspList, int fd) {
     RTSP_buffer *pRtsp = NULL, *pRtspNew = NULL;
 
 #ifdef RTSP_DEBUG
-    fprintf(stderr, "%s, %d\n", __FUNCTION__, __LINE__);
+    // fprintf(stderr, "%s, %d\n", __FUNCTION__, __LINE__);
 #endif
 
     //在链表头部插入第一个元素

@@ -161,7 +161,7 @@ int hi_si_put_h264_data_to_buffer(IMPEncoderStream *stream) {
             uint32_t p_str_len=    stream->pack->length;
             printf("pstr content: ");
             for (int j = 0; j < p_str_len; ++j) {
-                printf("%02X ", pstr[j]);
+                printf("%02X", pstr[j]);
             }
             printf("\n");
 

@@ -262,7 +262,7 @@ void *sample_venc_1080p_classic(void *p)
 	for(i=0;i<8;i++)
 	{
 		prHander[i] = IMP_OSD_CreateRgn(NULL);
-		if (*prHander[i] == INVHANDLE) // modify by gy.....
+		if (prHander[i] == INVHANDLE) // modify by gy.....
 		{
 			printf("IMP_OSD_CreateRgn Line error !\n");
 			return;
