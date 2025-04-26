@@ -100,6 +100,7 @@ static int byGetFd = 0;
 IMPRgnHandle *prHander[8]={NULL};
 int grpNum = 1;
 extern int stop;
+
 void SAMPLE_VENC_HandleSig(int signo)
 {
     signal(SIGINT, SIG_IGN);
@@ -198,9 +199,10 @@ void showbox(int index,int x0,int y0,int x1,int y1)
 		return ;
 	}
 }
-void *SAMPLE_VENC_1080P_CLASSIC(void *p)
+void *sample_venc_1080p_classic(void *p)
 //int main(int argc, char *argv[])
 {
+	PRINT_CURR_FUNC("-------------------------------------------------sample_venc_1080p_classic()")
     puts("start sub thread task......");
 	int i, ret;
 
@@ -260,7 +262,7 @@ void *SAMPLE_VENC_1080P_CLASSIC(void *p)
 	for(i=0;i<8;i++)
 	{
 		prHander[i] = IMP_OSD_CreateRgn(NULL);
-		if (prHander[i] == INVHANDLE) 
+		if (*prHander[i] == INVHANDLE) // modify by gy.....
 		{
 			printf("IMP_OSD_CreateRgn Line error !\n");
 			return;

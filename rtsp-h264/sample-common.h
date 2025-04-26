@@ -91,6 +91,8 @@ extern "C"
 #define CHN_ENABLE 		1
 #define CHN_DISABLE 	0
 
+#define PRINT_CURR_FUNC(method_name) puts((method_name));
+
 /*#define SUPPORT_RGB555LE*/
 
 //typedef struct {

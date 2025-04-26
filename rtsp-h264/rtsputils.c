@@ -53,6 +53,7 @@ char *sock_ntop_host(const struct sockaddr *sa, socklen_t salen, char *str, size
 
 int tcp_accept(int fd)
 {
+    PRINT_CURR_FUNC("-------------------------------------------------tcp_accept()")
     int f;
     struct sockaddr_storage addr;
     socklen_t addrlen = sizeof(addr);
@@ -62,23 +63,36 @@ int tcp_accept(int fd)
 
     /*接收连接，创建一个新的socket,返回其描述符*/
     f = accept(fd, (struct sockaddr *)&addr, &addrlen);
-
+    PRINT_CURR_FUNC("       |-----------waiting the client connect")
+    printf("           the client fd is : %d\n",f);
     return f;
 }
 
 void tcp_close(int s)
 {
+    PRINT_CURR_FUNC("-------------------------------------------------tcp_close()")
+    printf("    close client fd is : %d\n",s);
     close(s);
 }
 
+/**
+ *
+ * @param port
+ * @param addr
+ * @return
+ */
+
 int tcp_connect(unsigned short port, char *addr)
 {
+    PRINT_CURR_FUNC("-------------------------------------------------tcp_connect()")
+    PRINT_CURR_FUNC("       |-----------step 0 the client start to connect the server")
     int f;
     int on=1;
     int one = 1;/*used to set SO_KEEPALIVE*/
 
     struct sockaddr_in s;
     int v = 1;
+    PRINT_CURR_FUNC("       |-----------step 1 create socket")
     if((f = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))<0)
     {
         fprintf(stderr, "socket() error in tcp_connect.\n");
@@ -88,73 +102,101 @@ int tcp_connect(unsigned short port, char *addr)
     s.sin_family = AF_INET;
     s.sin_addr.s_addr = inet_addr(addr);//htonl(addr);
     s.sin_port = htons(port);
+    PRINT_CURR_FUNC("       |-----------step 2 set socket option:reuse address")
     // set to non-blocking
     if(ioctl(f, FIONBIO, &on) < 0)
     {
         fprintf(stderr,"ioctl() error in tcp_connect.\n");
         return -1;
     }
+    PRINT_CURR_FUNC("       |-----------step 3  set to non-blocking")
+
+    // 从连接队列中取出已建立的 TCP 连接。
     if(connect(f,(struct sockaddr*)&s, sizeof(s)) < 0)
     {
         fprintf(stderr,"connect() error in tcp_connect.\n");
         return -1;
     }
+    PRINT_CURR_FUNC("       |-----------step 4  set to non-blocking")
     if(setsockopt(f, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one))<0)
     {
         fprintf(stderr,"setsockopt() SO_KEEPALIVE error in tcp_connect.\n");
         return -1;
     }
+    PRINT_CURR_FUNC("       |-----------step 5 set socket option: keep alive")
     return f;
 }
 
+/**
+ *TCP 服务器的监听初始化函数 :创建一个 TCP 监听套接字，绑定到指定端口，并设置为非阻塞模式。
+ * socket()---->setsockopt()---->bind()---->ioctl()---->listen()
+ * @param port 544
+ * @return socket fd
+ */
 int tcp_listen(unsigned short port)
 {
-    int f;
+    PRINT_CURR_FUNC("-------------------------------------------------tcp_listen()")
+    int socket_fd;
     int on=1;
 
     struct sockaddr_in s;
     int v = 1;
 
     /*创建套接字*/
-    if((f = socket(AF_INET, SOCK_STREAM, 0))<0)
+    if((socket_fd = socket(AF_INET, SOCK_STREAM, 0))<0)
     {
         fprintf(stderr, "socket() error in tcp_listen.\n");
         return -1;
     }
+    PRINT_CURR_FUNC("       |-----------step 1 socket()")
 
     /*设置socket的可选参数*/
-    setsockopt(f, SOL_SOCKET, SO_REUSEADDR, (char *) &v, sizeof(int));
+    setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &v, sizeof(int));
+    PRINT_CURR_FUNC("       |-----------step 2 setsockopt()")
 
     s.sin_family = AF_INET;
     s.sin_addr.s_addr = htonl(INADDR_ANY);
     s.sin_port = htons(port);
 
     /*绑定socket*/
-    if(bind(f, (struct sockaddr *)&s, sizeof(s)))
+    if(bind(socket_fd, (struct sockaddr *)&s, sizeof(s)))
     {
         fprintf(stderr, "bind() error in tcp_listen");
         return -1;
     }
+    PRINT_CURR_FUNC("       |-----------step 3 bind()")
 
     //设置为非阻塞方式
-    if(ioctl(f, FIONBIO, &on) < 0)
+    if(ioctl(socket_fd, FIONBIO, &on) < 0)
     {
         fprintf(stderr, "ioctl() error in tcp_listen.\n");
         return -1;
     }
+    PRINT_CURR_FUNC("       |-----------step 4 ioctl()")
 
     /*监听*/
-    if(listen(f, SOMAXCONN) < 0)
+    if(listen(socket_fd, SOMAXCONN) < 0)
     {
         fprintf(stderr, "listen() error in tcp_listen.\n");
         return -1;
     }
+    PRINT_CURR_FUNC("       |-----------step 5 listen()")
 
-    return f;
+
+    return socket_fd;
 }
 
+/**
+ *  core logic : socket : recv()
+ * @param fd
+ * @param buffer
+ * @param nbytes
+ * @param Addr
+ * @return
+ */
 int tcp_read(int fd, void *buffer, int nbytes, struct sockaddr *Addr)
 {
+    PRINT_CURR_FUNC("-------------------------------------------------tcp_read()")
     int n;
     socklen_t Addrlen = sizeof(struct sockaddr);
     char addr_str[128];
@@ -172,8 +214,8 @@ int tcp_read(int fd, void *buffer, int nbytes, struct sockaddr *Addr)
         else
         {
             //打印出IP和port
-            fprintf(stderr, "%s ", sock_ntop_host(Addr, Addrlen, addr_str, sizeof(addr_str)));
-            fprintf(stderr, "Port:%d\n",ntohs(((struct sockaddr_in *)Addr)->sin_port));
+            fprintf(stderr, "       |-----------client port:%s ", sock_ntop_host(Addr, Addrlen, addr_str, sizeof(addr_str)));
+            fprintf(stderr, "       |-----------client port: %d\n",ntohs(((struct sockaddr_in *)Addr)->sin_port));
         }
     }
 
@@ -192,6 +234,7 @@ int tcp_write(int fd, void *buffer, int nbytes)
 
 int tcp_write(int connectSocketId, char *dataBuf, int dataSize)
 {
+    PRINT_CURR_FUNC("-------------------------------------------------tcp_write()")
     int     actDataSize;
 
     //发送数据
@@ -227,7 +270,7 @@ int num_conn = 2;    /*连接个数*/
  */
 int ScheduleInit()
 {
-    puts(__func__);
+    PRINT_CURR_FUNC("-------------------------------------------------ScheduleInit()")
     int i;
     pthread_t thread=0;
 
@@ -249,6 +292,7 @@ int ScheduleInit()
 
 void *schedule_do(void *arg)
 {
+    PRINT_CURR_FUNC("-------------------------------------------------schedule_do()")
     int i=0;
     struct timeval now;
     unsigned long long mnow;
@@ -293,14 +337,16 @@ void *schedule_do(void *arg)
                     //计算时间戳
                     gettimeofday(&now,NULL);
                     mnow = (now.tv_sec*1000 + now.tv_usec/1000);//毫秒
-                    if((sched[i].rtp_session->hndRtp)&&(s32FindNal))
-                    {
+                    if ((sched[i].rtp_session->hndRtp) && (s32FindNal)) {
                         //printf("send i frame,length:%d,pointer:%x,timestamp:%lld\n",ringinfo.size,(int)(ringinfo.buffer),mnow);
-                        buflen=ringbuflen;
-                        if(ringinfo.frame_type ==FRAME_TYPE_I)
-                            sched[i].BeginFrame=1;
-                        //if(sched[i].BeginFrame== 1)
-                            sched[i].play_action((unsigned int)(sched[i].rtp_session->hndRtp), ringinfo.buffer, ringinfo.size, mnow);
+                        buflen = ringbuflen;
+                        if (ringinfo.frame_type == FRAME_TYPE_I) {
+                            sched[i].BeginFrame = 1;
+                            //if(sched[i].BeginFrame== 1)
+                            // 是一个指针函数
+                            sched[i].play_action((unsigned int) (sched[i].rtp_session->hndRtp), ringinfo.buffer,
+                                                 ringinfo.size, mnow);
+                        }
                     }
                 }
             }
@@ -325,6 +371,7 @@ cleanup:
 //把RTP会话添加进schedule中，错误返回-1,正常返回schedule队列号
 int schedule_add(RTP_session *rtp_session)
 {
+    PRINT_CURR_FUNC("-------------------------------------------------schedule_add()")
     int i;
     for(i=0; i<MAX_CONNECTION; ++i)
     {
@@ -402,6 +449,8 @@ int bwrite(char *buffer, unsigned short len, RTSP_buffer * rtsp)
 
 int send_reply(int err, char *addon, RTSP_buffer * rtsp)
 {
+    PRINT_CURR_FUNC("-------------------------------------------------RtspServer()")
+
     unsigned int len;
     char *b;
     int res;

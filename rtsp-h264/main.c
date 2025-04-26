@@ -22,12 +22,12 @@
 #include "ringfifo.h"
 
 // 在别的代码里有实现
-extern void *SAMPLE_VENC_1080P_CLASSIC(void *p);
+extern void *sample_venc_1080p_classic(void *p);
 extern void SAMPLE_VENC_HandleSig(int signo);
 struct ringbuf ringinfo;
 void PrefsInit();
 void RTP_port_pool_init(int port);
-void EventLoop(int s32MainFd);
+void EventLoop(int sock_fd);
 void yoloy5_init(void);
 void yoloy5_run(void);
 void yoloy5_exit(void);
@@ -53,15 +53,22 @@ int main(int argc, char *argv[])
 	struct timespec ts = { 2, 0 };
 	pthread_t id;
 	pthread_t id2;
+	// (信号值 2）：当用户按下 Ctrl+C 时触发，通常用于请求进程中断。
 	signal(SIGINT, SAMPLE_VENC_HandleSig);
-	signal(SIGTERM, SAMPLE_VENC_HandleSig); 
-	ringmalloc(300*1024);
-	pthread_create(&id,NULL,SAMPLE_VENC_1080P_CLASSIC,NULL);
-    printf("--------------------------------小田广亚郎----------------------------------------------------start\n");
+	// SIGTERM（信号值 15）：请求进程终止（如通过 kill 命令发送）。
+	signal(SIGTERM, SAMPLE_VENC_HandleSig);
+
+	ringmalloc();
+
+	pthread_create(&id,NULL,sample_venc_1080p_classic,NULL);
+
+    printf("--------------------------------筱田広亚郎--------------------------------------------------start\n");
 	printf("RTSP server START\n");
 	PrefsInit();
 	printf("listen for client connecting...\n");
+
 	s32MainFd = tcp_listen(SERVER_RTSP_PORT_DEFAULT);
+
 	if (ScheduleInit() == ERR_FATAL)
 	{
 		fprintf(stderr,"Fatal: Can't start scheduler %s, %i \nServer is aborting.\n", __FILE__, __LINE__);
@@ -69,6 +76,10 @@ int main(int argc, char *argv[])
 	}
 	RTP_port_pool_init(RTP_DEFAULT_PORT);
 	sleep(3);
+
+
+
+
 	printf("start yoloy5\n");
 	yoloy5_init();
 	pthread_create(&id2,NULL,yoloy5,NULL);

@@ -27,6 +27,12 @@ sudo lsof /dev/ttyUSB0
 tftp -g -r rtsp-h264 192.168.0.193
 ```
 
+# 1. gdbserver
+* get
+```shell
+tftp -g -r gdbserver 192.168.0.193
+```
+
 
 * push
 ```shell
@@ -48,6 +54,22 @@ cp -a /home/dev/Documents/Android_work/Hai_si_work/hai_si/h264_rtsp/rtsp-h264/rt
 ```shell
 
 /home/dev/Documents/Android_work/main_ffmpeg/FFmpeg/ffplay_g -i /home/dev/Desktop/for_tftp/stream-chn0-2880x1620.h264
+```
+
+* 开发板
+```shell
+./gdbserver :6666 ./rtsp-h264 
+```
+
+
+* debug mips-linux-gnu-gdb rtsp-h264
+```shell
+mips-linux-gnu-gdb rtsp-h264
+```
+* /home/dev/Documents/Android_work/Hai_si_work/hai_si/mips_gcc720_glibc229_r5_1_4/bin/mips-linux-gnu-gdb
+
+```shell
+target remote 192.168.0.100:6666
 ```
 
 

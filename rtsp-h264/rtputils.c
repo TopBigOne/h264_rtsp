@@ -386,13 +386,20 @@ cleanup:
     }
     return s32Ret;
 }
-/**************************************************************************************************
-**
-**
-**
-**************************************************************************************************/
+
+
+/**
+ * 发送 声音和视屏数据
+ * @param u32Rtp
+ * @param pData 
+ * @param s32DataSize 
+ * @param u32TimeStamp 
+ * @return 
+ */
+
 unsigned int RtpSend(unsigned int u32Rtp, char *pData, int s32DataSize, unsigned int u32TimeStamp)
 {
+    PRINT_CURR_FUNC("-------------------------------------------------RtpSend()")
     int s32NalSize = 0;
     char *pNalBuf, *pDataEnd;
     HndRtp hRtp = (HndRtp)u32Rtp;
@@ -445,6 +452,7 @@ unsigned int RtpSend(unsigned int u32Rtp, char *pData, int s32DataSize, unsigned
     }
     else if(_h264nalu == hRtp->emPayload)
     {
+        PRINT_CURR_FUNC("       |----------- start send video data...")
         if(SendNalu264(hRtp, pData, s32DataSize) == -1)
         {
             return -1;
@@ -452,6 +460,7 @@ unsigned int RtpSend(unsigned int u32Rtp, char *pData, int s32DataSize, unsigned
     }
     else if(_g711 == hRtp->emPayload)
     {
+        PRINT_CURR_FUNC("       |----------- start send audio data...")
         if(SendNalu711(hRtp, pData, s32DataSize) == -1)
         {
             return -1;
@@ -464,6 +473,7 @@ unsigned int RtpSend(unsigned int u32Rtp, char *pData, int s32DataSize, unsigned
 
     return 0;
 }
+
 /**************************************************************************************************
 **
 **

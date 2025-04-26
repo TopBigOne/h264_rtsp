@@ -30,7 +30,7 @@
 // 码率模式
 const IMPEncoderRcMode S_RC_METHOD = IMP_ENC_RC_MODE_VBR;
 
-#define SHOW_FRM_BITRATE
+// #define SHOW_FRM_BITRATE 0
 
 #ifdef  SHOW_FRM_BITRATE
 #define FRM_BIT_RATE_TIME 2
@@ -61,6 +61,8 @@ gosd_enable=3：两者同时使用（需硬件支持）。
 int gosd_enable = 0; /* 1: ipu osd, 2: isp osd, 3: ipu osd and isp osd */
 
 struct chn_conf chn[FS_CHN_NUM];
+
+int hi_si_put_h264_data_to_buffer(IMPEncoderStream *stream);
 
 /*
 IMPSensorInfo Def_Sensor_Info[1] = {
@@ -632,6 +634,12 @@ int sample_jpeg_exit() {
     return 0;
 }
 
+/**
+ *  保存流数据，这个项目没有使用，而是将流数据传给rtsp
+ * @param fd
+ * @param stream
+ * @return
+ */
 static int save_stream(int fd, IMPEncoderStream *stream) {
     int ret, i, nr_pack = stream->packCount;
 
@@ -809,7 +817,7 @@ int sample_get_frame() {
     return 0;
 }
 
-int HisiPutH264DataToBuffer(IMPEncoderStream *stream);
+
 
 static void *get_video_stream_thread(void *args) {
     int               val, i, chnNum, ret;
@@ -894,7 +902,7 @@ static void *get_video_stream_thread(void *args) {
             }
         } else {
             if (chnNum == 1) {
-                HisiPutH264DataToBuffer(&stream);
+                hi_si_put_h264_data_to_buffer(&stream);
             }
             //ret = save_stream(stream_fd, &stream);
             //if (ret < 0) {

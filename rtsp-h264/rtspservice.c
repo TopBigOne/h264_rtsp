@@ -37,6 +37,7 @@ pthread_mutex_t mut;
 
 struct profileid_sps_pps psp; //存base64编码的profileid sps pps
 
+// 服务器参数
 StServPrefs stPrefs;
 extern int num_conn;
 int g_s32Maxfd = 0; //最大轮询id号
@@ -51,27 +52,25 @@ void RTP_port_pool_init(int port);
 
 int UpdateSpsOrPps(unsigned char *data, int frame_type, int len);
 
-/**************************************************************************************************
-**
-**
-**
-**************************************************************************************************/
+
+/**
+ *
+ */
 void PrefsInit() {
-    int l;
+    PRINT_CURR_FUNC("-------------------------------------------------PrefsInit()")
     //设置服务器信息全局变量: 默认端口
     stPrefs.port = SERVER_RTSP_PORT_DEFAULT;
-
     gethostname(stPrefs.hostname, sizeof(stPrefs.hostname));
-    l = strlen(stPrefs.hostname);
-    if (getdomainname(stPrefs.hostname + l + 1, sizeof(stPrefs.hostname) - l) != 0) {
-        stPrefs.hostname[l] = '.';
+    size_t host_name_length = strlen(stPrefs.hostname);
+    if (getdomainname(stPrefs.hostname + host_name_length + 1, sizeof(stPrefs.hostname) - host_name_length) != 0) {
+        stPrefs.hostname[host_name_length] = '.';
     }
 
 #ifdef RTSP_DEBUG
     printf("\n");
-    printf("\thostname is             : %s\n", stPrefs.hostname);
-    printf("\trtsp listening port is : %d\n", stPrefs.port);
-    printf("\tInput rtsp://hostIP:%d/test.264 to play this\n", stPrefs.port);
+    printf("\t hostname is            : %s\n", stPrefs.hostname);
+    printf("\t rtsp listening port is : %d\n", stPrefs.port);
+    printf("\t Input rtsp://hostIP:%d/test.264 to play this\n", stPrefs.port);
     printf("\n");
 #endif
 }
@@ -82,7 +81,10 @@ void PrefsInit() {
 **
 **************************************************************************************************/
 //为缓冲分配空间
-void RTSP_initserver(RTSP_buffer *rtsp, int fd) {
+void RTSP_init_server(RTSP_buffer *rtsp, int fd) {
+    PRINT_CURR_FUNC("-------------------------------------------------RTSP_init_server()")
+    puts("  malloc a RTSP_session");
+
     rtsp->fd = fd;
     rtsp->session_list = (RTSP_session *) calloc(1, sizeof(RTSP_session));
     rtsp->session_list->session_id = -1;
@@ -95,6 +97,7 @@ void RTSP_initserver(RTSP_buffer *rtsp, int fd) {
 **************************************************************************************************/
 //为RTP准备两个端口
 int RTP_get_port_pair(port_pair *pair) {
+    PRINT_CURR_FUNC("-------------------------------------------------RTP_get_port_pair()")
     int i;
 
     for (i = 0; i < MAX_CONNECTION; ++i) {
@@ -114,6 +117,7 @@ int RTP_get_port_pair(port_pair *pair) {
 **
 **************************************************************************************************/
 void AddClient(RTSP_buffer **ppRtspList, int fd) {
+    PRINT_CURR_FUNC("-------------------------------------------------AddClient()")
     RTSP_buffer *pRtsp = NULL, *pRtspNew = NULL;
 
 #ifdef RTSP_DEBUG
@@ -124,7 +128,7 @@ void AddClient(RTSP_buffer **ppRtspList, int fd) {
     if (*ppRtspList == NULL) {
         /*分配空间*/
         if (!(*ppRtspList = (RTSP_buffer *) calloc(1, sizeof(RTSP_buffer)))) {
-            fprintf(stderr, "alloc memory error %s,%i\n", __FILE__, __LINE__);
+            fprintf(stderr, "   ERROR : alloc memory error %s,%i\n", __FILE__, __LINE__);
             return;
         }
         pRtsp = *ppRtspList;
@@ -150,8 +154,8 @@ void AddClient(RTSP_buffer **ppRtspList, int fd) {
     }
 
     /*初始化新添加的客户端*/
-    RTSP_initserver(pRtsp, fd);
-    fprintf(stderr, "Incoming RTSP connection accepted on socket: %d\n", pRtsp->fd);
+    RTSP_init_server(pRtsp, fd);
+    fprintf(stdout, "       |-----------Incoming RTSP connection accepted on socket: %d\n", pRtsp->fd);
 }
 
 /**************************************************************************************************
@@ -169,7 +173,7 @@ void AddClient(RTSP_buffer **ppRtspList, int fd) {
  * terminate on really ugly cases.
  */
 int RTSP_full_msg_rcvd(RTSP_buffer *rtsp, int *hdr_len, int *body_len) {
-    puts(__FUNCTION__);
+    PRINT_CURR_FUNC("-------------------------------------------------RTSP_full_msg_rcvd()")
     int eomh; /* end of message header found */
     int mb; /* message body exists */
     int tc; /* terminator count */
@@ -304,6 +308,7 @@ int RTSP_full_msg_rcvd(RTSP_buffer *rtsp, int *hdr_len, int *body_len) {
  *			1 是服务器返回的响应
  */
 int RTSP_valid_response_msg(unsigned short *status, RTSP_buffer *rtsp) {
+    PRINT_CURR_FUNC("-------------------------------------------------RTSP_valid_response_msg()")
     char ver[32], trash[15];
     unsigned int stat;
     unsigned int seq;
@@ -349,6 +354,7 @@ int RTSP_valid_response_msg(unsigned short *status, RTSP_buffer *rtsp) {
 **************************************************************************************************/
 //返回请求方法类型，出错返回-1
 int RTSP_validate_method(RTSP_buffer *pRtsp) {
+    PRINT_CURR_FUNC("-------------------------------------------------RTSP_validate_method()")
     char method[32], hdr[16];
     char object[256];
     char ver[32];
@@ -439,6 +445,7 @@ int RTSP_validate_method(RTSP_buffer *pRtsp) {
 //解析URL中的port端口和文件名称
 int ParseUrl(const char *pUrl, char *pServer, unsigned short *port, char *pFileName, size_t FileNameLen) {
     /* expects format [rtsp://server[:port/]]filename RTSP/1.0*/
+    PRINT_CURR_FUNC("-------------------------------------------------ParseUrl()")
 
     int s32NoValUrl;
 
@@ -502,11 +509,7 @@ char *GetSdpId(char *buffer) {
     return buffer;
 }
 
-/**************************************************************************************************
-**
-**
-**
-**************************************************************************************************/
+
 void GetSdpDescr(RTSP_buffer *pRtsp, char *pDescr, char *s8Str) {
     /*/=====================================
         char const* const SdpPrefixFmt =
@@ -660,6 +663,7 @@ void add_time_stamp(char *b, int crlf) {
 **
 **************************************************************************************************/
 int SendDescribeReply(RTSP_buffer *rtsp, char *object, char *descr, char *s8Str) {
+    PRINT_CURR_FUNC("-------------------------------------------------SendDescribeReply()")
     char *pMsgBuf;  /* 用于获取响应缓冲指针*/
     int s32MbLen;
 
@@ -706,6 +710,7 @@ int SendDescribeReply(RTSP_buffer *rtsp, char *object, char *descr, char *s8Str)
 **************************************************************************************************/
 //describe处理
 int RTSP_describe(RTSP_buffer *pRtsp) {
+    PRINT_CURR_FUNC("-------------------------------------------------RTSP_describe()")
     char object[255], trash[255];
     char *p;
     unsigned short port;
@@ -794,6 +799,7 @@ int send_options_reply(RTSP_buffer *pRtsp, long cseq) {
 **************************************************************************************************/
 //options处理
 int RTSP_options(RTSP_buffer *pRtsp) {
+    PRINT_CURR_FUNC("-------------------------------------------------RTSP_options()")
     char *p;
     char trash[255];
     unsigned int cseq;
@@ -837,6 +843,7 @@ int RTSP_options(RTSP_buffer *pRtsp) {
 **
 **************************************************************************************************/
 int send_setup_reply(RTSP_buffer *pRtsp, RTSP_session *pSession, RTP_session *pRtpSes) {
+    PRINT_CURR_FUNC("-------------------------------------------------send_setup_reply()")
     char s8Str[1024];
     sprintf(s8Str, "%s %d %s"RTSP_EL"CSeq: %ld"RTSP_EL"Server: %s/%s"RTSP_EL, RTSP_VER,\
             200, get_stat(200), (long int) pRtsp->rtsp_cseq, PACKAGE, VERSION);
@@ -879,6 +886,7 @@ int send_setup_reply(RTSP_buffer *pRtsp, RTSP_session *pSession, RTP_session *pR
 **
 **************************************************************************************************/
 int RTSP_setup(RTSP_buffer *pRtsp) {
+    PRINT_CURR_FUNC("-------------------------------------------------RTSP_setup()")
     char s8TranStr[128], *s8Str;
     char *pStr;
     RTP_transport Transport;
@@ -987,7 +995,7 @@ int RTSP_setup(RTSP_buffer *pRtsp) {
     }
     printf("pstr=%s\n", pStr);
     if (Transport.type == RTP_no_transport) {
-        fprintf(stderr, "AAAAAAAAAAA Unsupported Transport,%s,%d\n", __FILE__, __LINE__);
+        fprintf(stderr, "ERROR Unsupported Transport,%s,%d\n", __FILE__, __LINE__);
         send_reply(461, 0, pRtsp); // Bad Request
         return ERR_NOERROR;
     }
@@ -1013,6 +1021,7 @@ int RTSP_setup(RTSP_buffer *pRtsp) {
     }
 
     pRtsp->session_list->session_id = s32SessionID;
+    //  这调度id是通过一个
     pRtsp->session_list->rtp_session->sched_id = schedule_add(rtp_s);
 
     send_setup_reply(pRtsp, rtsp_s, rtp_s);
@@ -1026,6 +1035,7 @@ int RTSP_setup(RTSP_buffer *pRtsp) {
 **
 **************************************************************************************************/
 int send_play_reply(RTSP_buffer *pRtsp, RTSP_session *pRtspSessn) {
+    PRINT_CURR_FUNC("-------------------------------------------------send_play_reply()")
     char s8Str[1024];
     char s8Temp[30];
     sprintf(s8Str, "%s %d %s"RTSP_EL"CSeq: %d"RTSP_EL"Server: %s/%s"RTSP_EL, RTSP_VER, 200,\
@@ -1047,6 +1057,7 @@ int send_play_reply(RTSP_buffer *pRtsp, RTSP_session *pRtspSessn) {
 **
 **************************************************************************************************/
 int RTSP_play(RTSP_buffer *pRtsp) {
+    PRINT_CURR_FUNC("-------------------------------------------------RTSP_play()")
     char *pStr;
     char pTrash[128];
     long int s32SessionId;
@@ -1153,6 +1164,7 @@ int RTSP_play(RTSP_buffer *pRtsp) {
  *cseq：RTSP 消息的序列号（用于匹配请求和响应）。
 **/
 int send_teardown_reply(RTSP_buffer *pRtsp, long SessionId, long cseq) {
+    PRINT_CURR_FUNC("-------------------------------------------------send_teardown_reply()")
     char s8Str[1024];
     char s8Temp[30];
 
@@ -1179,6 +1191,7 @@ int send_teardown_reply(RTSP_buffer *pRtsp, long SessionId, long cseq) {
 **
 **************************************************************************************************/
 int RTSP_teardown(RTSP_buffer *pRtsp) {
+    PRINT_CURR_FUNC("-------------------------------------------------RTSP_teardown()")
     char *pStr;
     char pTrash[128];
     long int s32SessionId;
@@ -1261,7 +1274,7 @@ int RTSP_teardown(RTSP_buffer *pRtsp) {
 **************************************************************************************************/
 /*rtsp״̬������������*/
 void RTSP_state_machine(RTSP_buffer *pRtspBuf, int method) {
-    puts(__func__);
+    PRINT_CURR_FUNC("-------------------------------------------------RTSP_state_machine()")
 
 #ifdef RTSP_DEBUG
     trace_point();
@@ -1445,6 +1458,7 @@ void RTSP_state_machine(RTSP_buffer *pRtspBuf, int method) {
 **
 **************************************************************************************************/
 void RTSP_remove_msg(int len, RTSP_buffer *rtsp) {
+    PRINT_CURR_FUNC("-------------------------------------------------RTSP_remove_msg()")
     rtsp->in_size -= len;
     if (rtsp->in_size && len) {
         //删除指定长度的消息
@@ -1459,6 +1473,7 @@ void RTSP_remove_msg(int len, RTSP_buffer *rtsp) {
 **
 **************************************************************************************************/
 void RTSP_discard_msg(RTSP_buffer *rtsp) {
+    PRINT_CURR_FUNC("-------------------------------------------------RTSP_discard_msg()")
     int hlen, blen;
 
 #ifdef RTSP_DEBUG
@@ -1476,6 +1491,7 @@ void RTSP_discard_msg(RTSP_buffer *rtsp) {
 **
 **************************************************************************************************/
 int RTSP_handler(RTSP_buffer *pRtspBuf) {
+    PRINT_CURR_FUNC("-------------------------------------------------RTSP_handler()")
     puts(__func__);
     int s32Meth;
 
@@ -1508,7 +1524,7 @@ int RTSP_handler(RTSP_buffer *pRtspBuf) {
  * @return 
  */
 int RtspServer(RTSP_buffer *rtsp) {
-    puts(__func__);
+    PRINT_CURR_FUNC("-------------------------------------------------RtspServer()")
     fd_set rset, wset;  /*select 的读写 I/O 描述集*/
     struct timeval t;
     int size;
@@ -1567,11 +1583,11 @@ int RtspServer(RTSP_buffer *rtsp) {
         if (rtsp->in_size + n > RTSP_BUFFERSIZE) {
             fprintf(stderr, "RTSP buffer overflow (input RTSP message is most likely invalid).\n");
             send_reply(500, NULL, rtsp);
-            return ERR_GENERIC; //�����������
+            return ERR_GENERIC; //数据溢出错误
         }
 
 #ifdef RTSP_DEBUG
-        fprintf(stderr, "INPUT_BUFFER was:%s\n", buffer);
+        fprintf(stderr, "       |--------INPUT_BUFFER was:%s\n", buffer);
 #endif
 
         /*填充数据*/
@@ -1616,13 +1632,25 @@ int RtspServer(RTSP_buffer *rtsp) {
     return ERR_NOERROR;
 }
 
-/**************************************************************************************************
-**
-**
-**
-**************************************************************************************************/
+
+/**
+ * 连接调度管理函数:
+* 定期检查所有 RTSP 连接的状态，处理异常关闭的连接，释放相关资源（如 RTP 会话、端口等）。
+
+核心逻辑：
+
+遍历 RTSP 连接链表（rtsp_list）。
+
+对每个连接调用 RtspServer() 处理请求。
+
+根据返回状态码（res）决定是否关闭连接、释放资源。
+
+维护全局连接计数和资源池。
+ * @param rtsp_list
+ * @param conn_count 
+ */
 void ScheduleConnections(RTSP_buffer **rtsp_list, int *conn_count) {
-    puts(__func__);
+    PRINT_CURR_FUNC("-------------------------------------------------ScheduleConnections()")
     int res;
     RTSP_buffer *pRtsp = *rtsp_list, *pRtspN = NULL;
     RTP_session *r = NULL, *t = NULL;
@@ -1632,8 +1660,9 @@ void ScheduleConnections(RTSP_buffer **rtsp_list, int *conn_count) {
 #endif
 
     while (pRtsp != NULL) {
-        // case 1:
+        // case 1: 处理当前连接的 RTSP 请求
         if ((res = RtspServer(pRtsp)) != ERR_NOERROR) {
+
             if (res == ERR_CONNECTION_CLOSE || res == ERR_GENERIC) {
                 /*连接已经关闭*/
                 if (res == ERR_CONNECTION_CLOSE)
@@ -1641,33 +1670,34 @@ void ScheduleConnections(RTSP_buffer **rtsp_list, int *conn_count) {
                 else
                     fprintf(stderr, "fd:%d,RTSP connection closed by server.\n", pRtsp->fd);
 
+                // 释放未正常结束的 RTP 会话
                 /*客户端在发送TEARDOWN 之前就截断了连接，但是会话却没有被释放*/
                 if (pRtsp->session_list != NULL) {
                     r = pRtsp->session_list->rtp_session;
                     /*释放所有会话*/
                     while (r != NULL) {
                         t = r->next;
-                        RtpDelete((unsigned int) (r->hndRtp));
-                        schedule_remove(r->sched_id);
+                        RtpDelete((unsigned int)(r->hndRtp));  // 删除 RTP 句柄
+                        schedule_remove(r->sched_id);          // 移除调度任务
                         r = t;
                     }
 
                     /*释放链表头指针*/
-                    free(pRtsp->session_list);
+                    free(pRtsp->session_list);  // 释放会话链表头
                     pRtsp->session_list = NULL;
-
                     g_s32DoPlay--;
                     if (g_s32DoPlay == 0) {
                         printf("user abort! no user online now resetfifo\n");
-                        ringreset;
+                        ringreset();
                         /* 重新将所有可用的RTP端口号放入到port_pool[MAX_SESSION] 中 */
                         RTP_port_pool_init(RTP_DEFAULT_PORT);
                     }
                     fprintf(stderr, "WARNING! fd:%d RTSP connection truncated before ending operations.\n", pRtsp->fd);
                 }
 
-                // wait for
+                // wait for to close fd
                 close(pRtsp->fd);
+                // 更新连接个数
                 --*conn_count;
                 num_conn--;
 
@@ -1694,7 +1724,8 @@ void ScheduleConnections(RTSP_buffer **rtsp_list, int *conn_count) {
                     stop_schedule = 1;
                 }
             } else {
-                printf("current fd:%d\n", pRtsp->fd);
+
+                printf("    current rtsp buffer fd:%d\n", pRtsp->fd);
                 pRtsp = pRtsp->next;
             }
         } else {
@@ -1705,18 +1736,19 @@ void ScheduleConnections(RTSP_buffer **rtsp_list, int *conn_count) {
             pRtsp = pRtsp->next;
         }
     }
+
 }
 
 /**
  * 事件轮训
- * @param s32MainFd
+ * @param sock_fd
  */
-void EventLoop(int s32MainFd) {
-    puts(__func__);
+void EventLoop(int sock_fd) {
+    PRINT_CURR_FUNC("-------------------------------------------------ScheduleConnections()")
 
     //	static unsigned int s32ChdCnt=0;
     static int s32ConCnt = 0; //已经连接的客户端数
-    int s32Fd = -1;
+    int accept_fd = -1;
     static RTSP_buffer *pRtspList = NULL;
     RTSP_buffer *p = NULL;
     unsigned int u32FdFound;
@@ -1724,15 +1756,15 @@ void EventLoop(int s32MainFd) {
     //	printf("%s\n", __FUNCTION__);
     /*接收连接，创建一个新的socket*/
     if (s32ConCnt != -1) {
-        s32Fd = tcp_accept(s32MainFd);
+        accept_fd = tcp_accept(sock_fd);
     }
 
     /*处理新创建的连接*/
-    // fd ok....
-    if (s32Fd >= 0) {
+    // accept_fd ok....
+    if (accept_fd >= 0) {
         /*查找列表中是否存在此连接的socket*/
         for (u32FdFound = 0, p = pRtspList; p != NULL; p = p->next) {
-            if (p->fd == s32Fd) {
+            if (p->fd == accept_fd) {
                 u32FdFound = 1;
                 break;
             }
@@ -1741,16 +1773,18 @@ void EventLoop(int s32MainFd) {
             /*创建一个连接，增加一个客户端*/
             if (s32ConCnt < MAX_CONNECTION) {
                 ++s32ConCnt;
-                AddClient(&pRtspList, s32Fd);
+                AddClient(&pRtspList, accept_fd);
             } else {
-                fprintf(stderr, "exceed the MAX client, ignore this connecting\n");
+                fprintf(stderr, "   ERROR : exceed the MAX client, ignore this connecting\n");
                 return;
             }
             num_conn++;
-            fprintf(stderr, "%s Connection reached: %d\n", __FUNCTION__, num_conn);
+            fprintf(stderr, "   ERROR :  %s Connection reached: %d\n", __FUNCTION__, num_conn);
         }
-    }
+    }else {
+        PRINT_CURR_FUNC("       |-----------sorry ,no client try to connect our server....")
 
+    }
     /*对已有的连接进行调度*/
     //printf("7\r\n");
     // 开始连接
@@ -1763,7 +1797,7 @@ void EventLoop(int s32MainFd) {
 **
 **************************************************************************************************/
 void RTP_port_pool_init(int port) {
-    puts(__func__);
+    PRINT_CURR_FUNC("-------------------------------------------------RTP_port_pool_init()")
     int i;
     s_u32StartPort = port;
     for (i = 0; i < MAX_CONNECTION; ++i) {
@@ -1783,6 +1817,7 @@ void RTP_port_pool_init(int port) {
 **
 **************************************************************************************************/
 void IntHandl(int i) {
+    PRINT_CURR_FUNC("-------------------------------------------------IntHandl()")
     stop_schedule = 1;
     g_s32Quit = 1;
 }
@@ -1830,11 +1865,13 @@ char *base64_encode(const unsigned char *bindata, char *base64, int binlength) {
     return base64;
 }
 
-/**************************************************************************************************
-**
-**
-**
-**************************************************************************************************/
+/**
+ * 本项目使用
+ * @param in
+ * @param in_len
+ * @param out
+ * @param out_len
+ */
 void base64_encode2(char *in, const int in_len, char *out, int out_len) {
     static const char *codes = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 

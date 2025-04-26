@@ -9,10 +9,14 @@
 
 #define NMAX 32
 
-int iput = 0; /* 环形缓冲区的当前放入位置 */
-int iget = 0; /* 缓冲区的当前取出位置 */
+#define SINGLE_BUFFER_SIZE ( 300*1024)
+
+
+int ring_buffer_index_put = 0; /* 环形缓冲区的当前放入位置 */
+int ring_buffer_index_get = 0; /* 缓冲区的当前取出位置 */
 int n = 0; /* 环形缓冲区中的元素总数量 */
 
+// buffer 数组
 struct ringbuf ringfifo[NMAX];
 
 extern int UpdateSpsOrPps(unsigned char *data, int frame_type, int len);
@@ -21,19 +25,22 @@ void UpdateSps(unsigned char *data, int len);
 
 void UpdatePps(unsigned char *data, int len);
 
-/* 环形缓冲区的地址编号计算函数，如果到达唤醒缓冲区的尾部，将绕回到头部。
-环形缓冲区的有效地址编号为：0到(NMAX-1)
-*/
-void ringmalloc(int size) {
+
+/**
+* 环形缓冲区的地址编号计算函数，如果到达唤醒缓冲区的尾部，将绕回到头部。
+ * 环形缓冲区的有效地址编号为：0到(NMAX-1)
+ * @param size 300 字节
+ */
+void ringmalloc() {
     int i;
     for (i = 0; i < NMAX; i++) {
-        ringfifo[i].buffer = malloc(size);
+        ringfifo[i].buffer = malloc(SINGLE_BUFFER_SIZE);
         ringfifo[i].size = 0;
         ringfifo[i].frame_type = 0;
         // printf("FIFO INFO:idx:%d,len:%d,ptr:%x\n",i,ringfifo[i].size,(int)(ringfifo[i].buffer));
     }
-    iput = 0; /* 环形缓冲区的当前放入位置 */
-    iget = 0; /* 缓冲区的当前取出位置 */
+    ring_buffer_index_put = 0; /* 环形缓冲区的当前放入位置 */
+    ring_buffer_index_get = 0; /* 缓冲区的当前取出位置 */
     n = 0; /* 环形缓冲区中的元素总数量 */
 }
 
@@ -43,8 +50,8 @@ void ringmalloc(int size) {
 **
 **************************************************************************************************/
 void ringreset() {
-    iput = 0; /* 环形缓冲区的当前放入位置 */
-    iget = 0; /* 缓冲区的当前取出位置 */
+    ring_buffer_index_put = 0; /* 环形缓冲区的当前放入位置 */
+    ring_buffer_index_get = 0; /* 缓冲区的当前取出位置 */
     n = 0; /* 环形缓冲区中的元素总数量 */
 }
 
@@ -83,8 +90,8 @@ int addring(int i) {
 int ringget(struct ringbuf *getinfo) {
     int Pos;
     if (n > 0) {
-        Pos = iget;
-        iget = addring(iget);
+        Pos = ring_buffer_index_get;
+        ring_buffer_index_get = addring(ring_buffer_index_get);
         n--;
         getinfo->buffer = (ringfifo[Pos].buffer);
         getinfo->frame_type = ringfifo[Pos].frame_type;
@@ -105,11 +112,11 @@ int ringget(struct ringbuf *getinfo) {
 /* 向环形缓冲区中放入一个元素*/
 void ringput(unsigned char *buffer, int size, int encode_type) {
     if (n < NMAX) {
-        memcpy(ringfifo[iput].buffer, buffer, size);
-        ringfifo[iput].size = size;
-        ringfifo[iput].frame_type = encode_type;
+        memcpy(ringfifo[ring_buffer_index_put].buffer, buffer, size);
+        ringfifo[ring_buffer_index_put].size = size;
+        ringfifo[ring_buffer_index_put].frame_type = encode_type;
         //printf("Put FIFO INFO:idx:%d,len:%d,ptr:%x,type:%d\n",iput,ringfifo[iput].size,(int)(ringfifo[iput].buffer),ringfifo[iput].frame_type);
-        iput = addring(iput);
+        ring_buffer_index_put = addring(ring_buffer_index_put);
         n++;
     } else {
         //  printf("Buffer is full\n");
@@ -123,37 +130,45 @@ void ringput(unsigned char *buffer, int size, int encode_type) {
 **************************************************************************************************/
 #include <imp/imp_encoder.h>
 
-int HisiPutH264DataToBuffer(IMPEncoderStream *stream) {
-    int i, j, x;
+int hi_si_put_h264_data_to_buffer(IMPEncoderStream *stream) {
+    puts("-------------------------------------------------hi_si_put_h264_data_to_buffer()");
+    int i;
     int len = 0, off = 0, len2 = 2, uplen = 0;
     unsigned char *pstr;
     int iframe = 0;
     for (i = 0; i < stream->packCount; i++) {
         len += stream->pack[i].length;
     }
-    if (len >= 300 * 1024) {
+    if (len >= SINGLE_BUFFER_SIZE) {
         printf("drop data %d\n", len);
         return 1;
     }
 
     if (n < NMAX) {
         for (i = 0; i < stream->packCount; i++) {
-            memcpy(ringfifo[iput].buffer + off, stream->virAddr + stream->pack[i].offset, stream->pack[i].length);
+            memcpy(ringfifo[ring_buffer_index_put].buffer + off, stream->virAddr + stream->pack[i].offset, stream->pack[i].length);
 
             off += stream->pack[i].length;
             pstr = stream->virAddr + stream->pack[i].offset;
 
             if (pstr[4] == 0x67) {
-                UpdateSps(ringfifo[iput].buffer + off, 9);
+                UpdateSps(ringfifo[ring_buffer_index_put].buffer + off, 9);
                 iframe = 1;
             }
             if (pstr[4] == 0x68) {
-                UpdatePps(ringfifo[iput].buffer + off, 4);
+                UpdatePps(ringfifo[ring_buffer_index_put].buffer + off, 4);
             }
+            uint32_t p_str_len=    stream->pack->length;
+            printf("pstr content: ");
+            for (int j = 0; j < p_str_len; ++j) {
+                printf("%02X ", pstr[j]);
+            }
+            printf("\n");
+
         }
 
-        ringfifo[iput].size = len;
-        iput = addring(iput);
+        ringfifo[ring_buffer_index_put].size = len;
+        ring_buffer_index_put = addring(ring_buffer_index_put);
         n++;
     }
 

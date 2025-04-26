@@ -90,6 +90,10 @@
 #define PACKAGE "sunshine"
 #define VERSION "1.11"
 
+
+
+#define PRINT_CURR_FUNC(method_name) puts((method_name));
+
 //extern struct _tagStRtpHandle *HndRtp;
 
 
