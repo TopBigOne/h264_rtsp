@@ -86,7 +86,7 @@ gdbserver 192.168.0.193:1234 rtsp-h264
 ```shell
 target remote  192.168.0.102:1234
 ```
-
+* /home/dev/Documents/Hai_si_work/hai_si/mips_gcc720_glibc229_r5_1_4/bin/mips-linux-gnu-gdb
 
 ```c
 

@@ -4,20 +4,20 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "make",
+            "command": "cmake -S ${workspaceFolder} -B ${workspaceFolder}/build -DCMAKE_TOOLCHAIN_FILE=${workspaceFolder}/toolchain-mips.cmake -DCMAKE_BUILD_TYPE=Debug && cmake --build ${workspaceFolder}/build",
             "args": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
             "problemMatcher": ["$gcc"],
-            "detail": "Generated task"
+            "detail": "Configure (if needed) and build via CMake"
         },
         {
             "label": "clean",
             "type": "shell",
-            "command": "make",
-            "args": ["clean"],
+            "command": "rm -rf ${workspaceFolder}/build",
+            "args": [],
             "group": "build",
             "problemMatcher": []
         }
